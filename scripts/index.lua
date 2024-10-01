@@ -7,9 +7,7 @@ local function completeScripts(shell, index, args)
     completions = { "install", "run" }
   elseif index == 2 then
     -- Second argument: the folder name
-    table.insert(completions, "delveOS")
-    table.insert(completions, "farmbot")
-    table.insert(completions, "scripts")   -- Special case: 'scripts' itself
+    completions = { "delveOS", "farmbot", "scripts" }
   end
 
   return completions
