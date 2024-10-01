@@ -17,12 +17,29 @@ end
 
 -- Function to install a script
 local function installScript(folder)
-  -- Step 1: Prepare URLs
+  -- Special case: If installing 'scripts' itself
+  if folder == "scripts" then
+    print("Installing or updating the 'scripts' program itself...")
+
+    local baseURL = "https://raw.githubusercontent.com/zackharley/cc-tweaked-scripts/main/scripts/"
+    local indexURL = baseURL .. "index.lua"
+
+    -- Download the updated 'scripts.lua' and overwrite
+    if downloadFile(indexURL, "scripts.lua") then
+      print("Successfully updated 'scripts.lua'. You can now use the updated version.")
+    else
+      error("Failed to update 'scripts.lua'.")
+    end
+
+    return
+  end
+
+  -- Step 1: Prepare URLs for other scripts
   local baseURL = "https://raw.githubusercontent.com/zackharley/cc-tweaked-scripts/main/" .. folder .. "/"
   local indexURL = baseURL .. "index.lua"
   local packageURL = baseURL .. "package.json"
 
-  -- Step 2: Create directory for script
+  -- Step 2: Create directory for the script
   local scriptDir = "/scripts/" .. folder
   if not fs.exists(scriptDir) then
     fs.makeDir(scriptDir)
@@ -86,6 +103,13 @@ end
 
 -- Function to run an installed script
 local function runScript(folder)
+  -- Special case: Prevent recursion if trying to run 'scripts'
+  if folder == "scripts" then
+    print("Warning: Running 'scripts' from within 'scripts' could tear the fabric of space and time!")
+    print("Preventing recursion to keep the universe intact.")
+    return
+  end
+
   local scriptPath = "/scripts/" .. folder .. "/index.lua"
   if fs.exists(scriptPath) then
     shell.run(scriptPath)
