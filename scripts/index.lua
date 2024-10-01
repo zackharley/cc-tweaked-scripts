@@ -51,17 +51,21 @@ local function installScript(folder)
 
   if installedVersion then
     if installedVersion ~= newPackage.version then
+      term.setTextColor(colors.yellow)
       print("Version changed from " .. installedVersion .. " to " .. newPackage.version)
     else
+      term.setTextColor(colors.green)
       print("Script is up to date with version " .. installedVersion)
     end
   else
+    term.setTextColor(colors.green)
     print("Installing script version " .. newPackage.version)
   end
+  term.setTextColor(colors.white)
 
   -- Step 6: Download index.lua (main file)
   if not downloadFile(indexURL, scriptDir .. "/index.lua") then
-    print("Failed to download index.lua for " .. folder)
+    error("Failed to download index.lua for " .. folder)
     return
   end
 
