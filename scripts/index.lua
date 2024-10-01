@@ -5,21 +5,42 @@ local function completeScripts(shell, index, args)
   if index == 1 then
     -- First argument: the command (either 'install' or 'run')
     completions = { "install", "run" }
-    -- After completing a command, add a space for the next argument
-    return completions, " "
+
+    -- If the current input matches one of the completions, suggest a space
+    if table.contains(completions, args[1]) then
+      return { " " }
+    else
+      return completions
+    end
   elseif index == 2 then
     -- Second argument: the folder name
     local folders = { "delveOS", "farmbot", "scripts" }
-    -- Suggest folder names and end input after completion
-    return folders -- No space after completion since it's the end of input
+
+    -- If the current input matches one of the folder names, suggest nothing (end input)
+    if table.contains(folders, args[2]) then
+      return {}
+    else
+      return folders
+    end
   else
     -- No further arguments should be completed
     return {}
   end
 end
 
+-- Helper function to check if a table contains a value
+function table.contains(table, element)
+  for _, value in pairs(table) do
+    if value == element then
+      return true
+    end
+  end
+  return false
+end
+
 -- Register the completion function with the shell
 shell.setCompletionFunction("scripts.lua", completeScripts)
+
 
 -- Utility function to download a file from GitHub
 local function downloadFile(url, path)
