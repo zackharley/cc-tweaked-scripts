@@ -1,3 +1,23 @@
+-- Register the command completion function
+local function completeScripts(shell, index, args)
+  local completions = {}
+
+  if index == 1 then
+    -- First argument: the command (either 'install' or 'run')
+    completions = { "install", "run" }
+  elseif index == 2 then
+    -- Second argument: the folder name
+    table.insert(completions, "delveOS")
+    table.insert(completions, "farmbot")
+    table.insert(completions, "scripts")   -- Special case: 'scripts' itself
+  end
+
+  return completions
+end
+
+-- Register the completion function with the shell
+shell.setCompletionFunction("scripts.lua", completeScripts)
+
 -- Utility function to download a file from GitHub
 local function downloadFile(url, path)
   local response = http.get(url)
