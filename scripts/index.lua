@@ -5,12 +5,17 @@ local function completeScripts(shell, index, args)
   if index == 1 then
     -- First argument: the command (either 'install' or 'run')
     completions = { "install", "run" }
+    -- After completing a command, add a space for the next argument
+    return completions, " "
   elseif index == 2 then
     -- Second argument: the folder name
-    completions = { "delveOS", "farmbot", "scripts" }
+    local folders = { "delveOS", "farmbot", "scripts" }
+    -- Suggest folder names and end input after completion
+    return folders -- No space after completion since it's the end of input
+  else
+    -- No further arguments should be completed
+    return {}
   end
-
-  return completions
 end
 
 -- Register the completion function with the shell
