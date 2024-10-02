@@ -1,10 +1,10 @@
 local parameters = {
-  ["run"] = {
+  ["run "] = {
     ["delveOS"] = {},
     ["farmbot"] = {},
     ["scripts"] = {},
   },
-  ["install"] = {
+  ["install "] = {
     ["delveOS"] = {},
     ["farmbot"] = {},
     ["scripts"] = {},
