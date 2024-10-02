@@ -59,6 +59,38 @@ local function downloadFile(url, path)
   return true
 end
 
+-- Function to check for script updates
+local function checkForUpdate()
+  local packageURL = "https://raw.githubusercontent.com/zackharley/cc-tweaked-scripts/main/scripts/package.json"
+  local tempPackagePath = "/scripts/scripts_package_check.json"
+
+  -- Download the latest version of package.json to check for updates
+  if downloadFile(packageURL, tempPackagePath) then
+    local packageFile = fs.open(tempPackagePath, "r")
+    local packageData = textutils.unserializeJSON(packageFile.readAll())
+    packageFile.close()
+    fs.delete(tempPackagePath)
+
+    -- Check if local version is available
+    if fs.exists("/scripts/scripts_package.json") then
+      local localPackageFile = fs.open("/scripts/scripts_package.json", "r")
+      local localPackageData = textutils.unserializeJSON(localPackageFile.readAll())
+      localPackageFile.close()
+
+      if packageData and localPackageData and packageData.version ~= localPackageData.version then
+        print("Update available! Install with")
+        term.colors(colors.yellow)
+        print("`scripts install scripts`")
+        term.colors(colors.white)
+        return true -- An update is available
+      end
+    end
+  else
+    print("Failed to check for updates.")
+  end
+  return false -- No update is required
+end
+
 -- Function to install a script
 local function installScript(folder)
   -- Special case: If installing 'scripts' itself
@@ -91,9 +123,6 @@ local function installScript(folder)
         print("Failed to get the version from the package.json")
       end
       term.setTextColor(colors.white)
-
-      -- Clean up temp package.json file
-      fs.delete(tempPackagePath)
     else
       print("Failed to download the package.json for 'scripts'.")
     end
@@ -187,6 +216,11 @@ end
 
 -- Main program logic
 local args = { ... }
+
+-- Check for updates before proceeding
+if checkForUpdate() then
+  return -- Abort if an update is available
+end
 
 if #args < 2 then
   print("Usage:")
