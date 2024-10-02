@@ -41,7 +41,6 @@ end
 -- Register the completion function with the shell
 shell.setCompletionFunction("scripts.lua", completeScripts)
 
-
 -- Utility function to download a file from GitHub
 local function downloadFile(url, path)
   local response = http.get(url)
@@ -67,12 +66,32 @@ local function installScript(folder)
 
     local baseURL = "https://raw.githubusercontent.com/zackharley/cc-tweaked-scripts/main/scripts/"
     local indexURL = baseURL .. "index.lua"
+    local packageURL = baseURL .. "package.json"
 
     -- Download the updated 'scripts.lua' and overwrite
     if downloadFile(indexURL, "scripts.lua") then
-      print("Successfully updated 'scripts.lua'. You can now use the updated version.")
+      print("Successfully updated 'scripts.lua'.")
     else
       error("Failed to update 'scripts.lua'.")
+    end
+
+    -- Fetch the package.json to get the new version number
+    local tempPackagePath = "/scripts/scripts_package.json"
+    if downloadFile(packageURL, tempPackagePath) then
+      local packageFile = fs.open(tempPackagePath, "r")
+      local packageData = textutils.unserializeJSON(packageFile.readAll())
+      packageFile.close()
+
+      if packageData and packageData.version then
+        print("New version: " .. packageData.version)
+      else
+        print("Failed to get the version from the package.json")
+      end
+
+      -- Clean up temp package.json file
+      fs.delete(tempPackagePath)
+    else
+      print("Failed to download the package.json for 'scripts'.")
     end
 
     return
