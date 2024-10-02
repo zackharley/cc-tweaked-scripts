@@ -167,7 +167,7 @@ end
 -- Main function to handle the process for all quadrants
 local function harvestAllQuadrants()
   refuelTurtle()             -- Refuel the turtle before starting
-  for quadrant = 1, 4 do
+  for quadrant = 1, 1 do
     moveToQuadrant(quadrant) -- Go to the respective quadrant
     harvestAndReplant()      -- Harvest and replant crops
     returnToCenter()         -- Go back to the central station
