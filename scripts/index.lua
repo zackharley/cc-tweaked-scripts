@@ -1,64 +1,46 @@
--- Register the command completion function
-local function completeScripts(shell, index, args)
-  local completions = {}
+local parameters = {
+  ["run"] = {
+    ["delveOS"] = {},
+    ["farmbot"] = {},
+    ["scripts"] = {},
+  },
+  ["install"] = {
+    ["delveOS"] = {},
+    ["farmbot"] = {},
+    ["scripts"] = {},
+  }
+}
 
-  if index == 1 then
-    -- First argument: the command (either 'install' or 'run')
-    completions = { "install", "run" }
-
-    local userInput = args[1] or ""
-    local suggestions = {}
-
-    -- Find matching completions based on partial input
-    for _, command in ipairs(completions) do
-      if command:sub(1, #userInput) == userInput then
-        -- Suggest the remaining part of the command
-        table.insert(suggestions, command:sub(#userInput + 1))
-      end
-    end
-
-    return suggestions
-  elseif index == 2 then
-    -- Second argument: the folder name
-    local folders = { "delveOS", "farmbot", "scripts" }
-
-    local userInput = args[2] or ""
-    local suggestions = {}
-
-    -- Find matching folder names based on partial input
-    for _, folder in ipairs(folders) do
-      if folder:sub(1, #userInput) == userInput then
-        -- Suggest the remaining part of the folder name
-        table.insert(suggestions, folder:sub(#userInput + 1))
-      end
-    end
-
-    return suggestions
-  else
-    -- No further arguments should be completed
-    return {}
-  end
-end
-
--- Helper function to check if a table contains a value
-function table.contains(table, element)
-  for _, value in pairs(table) do
-    if value == element then
-      return true
+local function tabCompletionFunction(shell, parNumber, curText, lastText)
+  -- Check that the parameters entered so far are valid:
+  local curParam = parameters
+  for i = 2, #lastText do
+    if curParam[lastText[i] .. " "] then
+      curParam = curParam[lastText[i] .. " "]
+    else
+      return {}
     end
   end
-  return false
+
+  -- Check for suitable words for the current parameter:
+  local results = {}
+  for word, _ in pairs(curParam) do
+    if word:sub(1, #curText) == curText then
+      results[#results + 1] = word:sub(#curText + 1)
+    end
+  end
+  return results
 end
 
 -- Register the completion function with the shell
-shell.setCompletionFunction("scripts.lua", completeScripts)
+shell.setCompletionFunction("scripts.lua", tabCompletionFunction)
 
 -- Utility function to download a file from GitHub, ignoring caching using headers
 local function downloadFile(url, path)
   -- Set the HTTP request headers to disable caching
   local headers = {
     ["Cache-Control"] = "no-cache",
-    ["Pragma"] = "no-cache"   -- Fallback for older servers
+    ["Pragma"] = "no-cache" -- Fallback for older servers
   }
 
   -- Make the HTTP request with custom headers
