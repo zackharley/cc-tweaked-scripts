@@ -53,9 +53,16 @@ end
 -- Register the completion function with the shell
 shell.setCompletionFunction("scripts.lua", completeScripts)
 
--- Utility function to download a file from GitHub
+-- Utility function to download a file from GitHub, ignoring caching using headers
 local function downloadFile(url, path)
-  local response = http.get(url)
+  -- Set the HTTP request headers to disable caching
+  local headers = {
+    ["Cache-Control"] = "no-cache",
+    ["Pragma"] = "no-cache"   -- Fallback for older servers
+  }
+
+  -- Make the HTTP request with custom headers
+  local response = http.get(url, headers)
   if response then
     local content = response.readAll()
     response.close()
