@@ -233,11 +233,11 @@ local command = args[1]
 local folder = args[2]
 
 term.clear()
+term.setCursorPos(1, 1)
 if command == "install" then
   installScript(folder)
 elseif command == "run" then
   runScript(folder)
 else
-  term.clear()
   print("Invalid command. Use 'install' or 'run'.")
 end
