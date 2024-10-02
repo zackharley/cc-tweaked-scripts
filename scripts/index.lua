@@ -6,22 +6,34 @@ local function completeScripts(shell, index, args)
     -- First argument: the command (either 'install' or 'run')
     completions = { "install", "run" }
 
-    -- If the current input matches one of the completions, suggest a space
-    if table.contains(completions, args[1]) then
-      return { " " }
-    else
-      return completions
+    local userInput = args[1] or ""
+    local suggestions = {}
+
+    -- Find matching completions based on partial input
+    for _, command in ipairs(completions) do
+      if command:sub(1, #userInput) == userInput then
+        -- Suggest the remaining part of the command
+        table.insert(suggestions, command:sub(#userInput + 1))
+      end
     end
+
+    return suggestions
   elseif index == 2 then
     -- Second argument: the folder name
     local folders = { "delveOS", "farmbot", "scripts" }
 
-    -- If the current input matches one of the folder names, suggest nothing (end input)
-    if table.contains(folders, args[2]) then
-      return {}
-    else
-      return folders
+    local userInput = args[2] or ""
+    local suggestions = {}
+
+    -- Find matching folder names based on partial input
+    for _, folder in ipairs(folders) do
+      if folder:sub(1, #userInput) == userInput then
+        -- Suggest the remaining part of the folder name
+        table.insert(suggestions, folder:sub(#userInput + 1))
+      end
     end
+
+    return suggestions
   else
     -- No further arguments should be completed
     return {}
@@ -83,10 +95,13 @@ local function installScript(folder)
       packageFile.close()
 
       if packageData and packageData.version then
+        term.setTextColor(colors.green)
         print("New version: " .. packageData.version)
       else
+        term.setTextColor(colors.red)
         print("Failed to get the version from the package.json")
       end
+      term.setTextColor(colors.white)
 
       -- Clean up temp package.json file
       fs.delete(tempPackagePath)
