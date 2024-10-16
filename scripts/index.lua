@@ -6,6 +6,7 @@ local parameters = {
   },
   ["install "] = {
     ["delveOS"] = {},
+    ["excavate3d"] = {},
     ["farmbot"] = {},
     ["scripts"] = {},
   }
