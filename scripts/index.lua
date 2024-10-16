@@ -79,9 +79,9 @@ local function checkForUpdate()
 
       if packageData and localPackageData and packageData.version ~= localPackageData.version then
         print("Update available! Install with")
-        term.colors(colors.yellow)
+        term.setTextColor(colors.yellow)
         print("`scripts install scripts`")
-        term.colors(colors.white)
+        term.setTextColor(colors.white)
         return true -- An update is available
       end
     end
