@@ -217,8 +217,12 @@ end
 -- Main program logic
 local args = { ... }
 
+local command = args[1]
+local folder = args[2]
+
+local isInstallingUpdate = command == "install" and folder == "scripts"
 -- Check for updates before proceeding
-if checkForUpdate() then
+if not isInstallingUpdate and checkForUpdate() then
   return -- Abort if an update is available
 end
 
@@ -228,9 +232,6 @@ if #args < 2 then
   print("scripts run <folder-name>      - Run an installed script")
   return
 end
-
-local command = args[1]
-local folder = args[2]
 
 term.clear()
 term.setCursorPos(1, 1)
