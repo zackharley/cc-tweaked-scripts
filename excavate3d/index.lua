@@ -1,136 +1,135 @@
--- Function to prompt for input and convert it to a number
-local function promptDimension(prompt)
-  print(prompt)
-  return tonumber(read())
+local tArgs = { ... }
+
+local function getDimensions()
+  if #tArgs == 3 then
+    return tonumber(tArgs[1]), tonumber(tArgs[2]), tonumber(tArgs[3])
+  else
+    print("Enter length:")
+    local length = tonumber(read())
+    print("Enter width:")
+    local width = tonumber(read())
+    print("Enter depth:")
+    local depth = tonumber(read())
+    return length, width, depth
+  end
 end
 
--- Instruction to the user to ensure proper turtle placement
-print(
-  "Please ensure that the turtle is positioned at the top-left corner of the 3D rectangle, at the highest level, and facing down the length of the mining area.")
+local length, width, depth = getDimensions()
 
--- Prompt the user for the mining area dimensions
-local width = promptDimension("Enter the width of the mining area:")
-local length = promptDimension("Enter the length of the mining area:")
-local height = promptDimension("Enter the height (depth) of the mining area:")
+if not length or not width or not depth then
+  print("Error: All dimensions must be valid numbers.")
+  return
+end
 
--- Starting position for returning
-local startX, startY, startZ = 0, height - 1, 0
-local direction = 1 -- 1: forward, -1: backward (for zig-zag movement)
+local startX, startY, startZ = gps.locate()
+if not startX or not startY or not startZ then
+  print("Error: GPS signal not found.")
+  return
+end
 
--- Track position
-local x, y, z = 0, height - 1, 0
+local currentX, currentY, currentZ = startX, startY, startZ
 
--- Function to refuel the turtle if necessary
-local function refuel()
-  for slot = 1, 16 do
-    if turtle.getFuelLevel() < 10 and turtle.getItemCount(slot) > 0 then
-      turtle.select(slot)
-      turtle.refuel()
+local function checkFuel()
+  if turtle.getFuelLevel() == 0 then
+    print("Error: Out of fuel.")
+    return false
+  end
+  return true
+end
+
+local function withinBounds(x, y, z)
+  return x >= startX and x < startX + length and
+      y >= startY - depth and y <= startY and
+      z >= startZ and z < startZ + width
+end
+
+local function moveForward()
+  local newX, newZ = currentX, currentZ
+  if turtle.forward() then
+    if turtle.getFacing() == 0 then
+      newX = currentX + 1
+    elseif turtle.getFacing() == 1 then
+      newZ = currentZ + 1
+    elseif turtle.getFacing() == 2 then
+      newX = currentX - 1
+    elseif turtle.getFacing() == 3 then
+      newZ = currentZ - 1
     end
-  end
-end
-
--- Function to return to start position and drop off non-fuel items
-local function returnToStartAndDump()
-  -- Return to starting height
-  while y < height - 1 do
-    turtle.up()
-    y = y + 1
-  end
-
-  -- Return to starting Z
-  while z > 0 do
-    turtle.forward()
-    z = z - 1
-  end
-
-  -- Return to starting X
-  while x > 0 do
-    turtle.turnLeft()
-    turtle.forward()
-    turtle.turnRight()
-    x = x - 1
-  end
-
-  -- Drop off non-fuel items
-  for slot = 1, 16 do
-    turtle.select(slot)
-    if not turtle.refuel(0) then -- Skip fuel items
-      turtle.dropDown()
+    if withinBounds(newX, currentY, newZ) then
+      currentX, currentZ = newX, newZ
+      return true
+    else
+      print("Error: Out of bounds.")
+      return false
     end
+  else
+    print("Error: Unable to move forward.")
+    return false
   end
 end
 
--- Function to move the turtle in a zig-zag pattern and mine a single layer
-local function mineLayer()
-  for i = 1, length do
-    for j = 1, width - 1 do
+local function moveDown()
+  local newY = currentY - 1
+  if withinBounds(currentX, newY, currentZ) and turtle.down() then
+    currentY = newY
+    return true
+  else
+    print("Error: Unable to move down or out of bounds.")
+    return false
+  end
+end
+
+local function moveUp()
+  local newY = currentY + 1
+  if withinBounds(currentX, newY, currentZ) and turtle.up() then
+    currentY = newY
+    return true
+  else
+    print("Error: Unable to move up or out of bounds.")
+    return false
+  end
+end
+
+local function digLayer()
+  for w = 1, width do
+    for l = 1, length - 1 do
+      if not checkFuel() then return false end
       turtle.dig()
-      turtle.forward()
-      refuel()
-      z = z + direction
+      if not moveForward() then return false end
     end
-    -- Move to next row if not at the last row of this layer
-    if i < length then
-      if direction == 1 then
+    if w < width then
+      if w % 2 == 1 then
         turtle.turnRight()
+        if not checkFuel() then return false end
         turtle.dig()
-        turtle.forward()
+        if not moveForward() then return false end
         turtle.turnRight()
       else
         turtle.turnLeft()
+        if not checkFuel() then return false end
         turtle.dig()
-        turtle.forward()
+        if not moveForward() then return false end
         turtle.turnLeft()
       end
-      refuel()
-      x = x + 1
     end
-    -- Reverse the direction for the next row
-    direction = -direction
   end
+  return true
 end
 
--- Main function to mine all layers from top to bottom
-local function mineArea()
-  for h = 1, height do
-    -- Mine the current layer
-    mineLayer()
-
-    -- If we're not at the bottom layer, move down
-    if h < height then
+local function excavate()
+  for d = 1, depth do
+    if not digLayer() then return end
+    if d < depth then
+      if not checkFuel() then return end
       turtle.digDown()
-      turtle.down()
-      refuel()
-      y = y - 1
-
-      -- Reset the x, z coordinates for the new layer
-      -- Make sure the turtle is in the same position at the start of each new layer
-      if direction == -1 then
-        -- If the last row was done backward, we need to correct the direction and move back to the start of the next layer
-        turtle.turnRight()
-        turtle.turnRight()
-        direction = 1
-      end
-      x, z = 0, 0
-    end
-
-    -- Check if inventory is full and return to dump if necessary
-    local full = true
-    for slot = 1, 16 do
-      if turtle.getItemCount(slot) == 0 then
-        full = false
-        break
-      end
-    end
-    -- Return to start if inventory is full
-    if full then
-      returnToStartAndDump()
+      if not moveDown() then return end
     end
   end
-  -- After mining, return to the starting point
-  returnToStartAndDump()
+  -- Return to the original height
+  for d = 1, depth - 1 do
+    if not moveUp() then return end
+  end
+  print("Excavation complete.")
 end
 
--- Start mining the area
-mineArea()
+excavate()
