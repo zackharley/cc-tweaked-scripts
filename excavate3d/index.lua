@@ -2,7 +2,15 @@ local tArgs = { ... }
 
 local function getDimensions()
   if #tArgs == 3 then
-    return tonumber(tArgs[1]), tonumber(tArgs[2]), tonumber(tArgs[3])
+    local length = tonumber(tArgs[1])
+    local width = tonumber(tArgs[2])
+    local depth = tonumber(tArgs[3])
+    if length and width and depth and length > 0 and width > 0 and depth > 0 then
+      return length, width, depth
+    else
+      print("Error: All dimensions must be positive integers.")
+      return nil, nil, nil
+    end
   else
     print("Enter length:")
     local length = tonumber(read())
@@ -10,24 +18,23 @@ local function getDimensions()
     local width = tonumber(read())
     print("Enter depth:")
     local depth = tonumber(read())
-    return length, width, depth
+    if length and width and depth and length > 0 and width > 0 and depth > 0 then
+      return length, width, depth
+    else
+      print("Error: All dimensions must be positive integers.")
+      return nil, nil, nil
+    end
   end
 end
 
 local length, width, depth = getDimensions()
 
 if not length or not width or not depth then
-  print("Error: All dimensions must be valid numbers.")
   return
 end
 
-local startX, startY, startZ = gps.locate()
-if not startX or not startY or not startZ then
-  print("Error: GPS signal not found.")
-  return
-end
-
-local currentX, currentY, currentZ = startX, startY, startZ
+local currentX, currentY, currentZ = 0, 0, 0
+local currentDirection = 0 -- 0: east, 1: south, 2: west, 3: north
 
 local function checkFuel()
   if turtle.getFuelLevel() == 0 then
@@ -38,21 +45,21 @@ local function checkFuel()
 end
 
 local function withinBounds(x, y, z)
-  return x >= startX and x < startX + length and
-      y >= startY - depth and y <= startY and
-      z >= startZ and z < startZ + width
+  return x >= 0 and x < length and
+      y >= -depth and y <= 0 and
+      z >= 0 and z < width
 end
 
 local function moveForward()
   local newX, newZ = currentX, currentZ
   if turtle.forward() then
-    if turtle.getFacing() == 0 then
+    if currentDirection == 0 then
       newX = currentX + 1
-    elseif turtle.getFacing() == 1 then
+    elseif currentDirection == 1 then
       newZ = currentZ + 1
-    elseif turtle.getFacing() == 2 then
+    elseif currentDirection == 2 then
       newX = currentX - 1
-    elseif turtle.getFacing() == 3 then
+    elseif currentDirection == 3 then
       newZ = currentZ - 1
     end
     if withinBounds(newX, currentY, newZ) then
@@ -90,6 +97,19 @@ local function moveUp()
   end
 end
 
+local function turnRight()
+  turtle.turnRight()
+  currentDirection = (currentDirection + 1) % 4
+end
+
+local function turnLeft()
+  turtle.turnLeft()
+  currentDirection = (currentDirection - 1) % 4
+  if currentDirection < 0 then
+    currentDirection = currentDirection + 4
+  end
+end
+
 local function digLayer()
   for w = 1, width do
     for l = 1, length - 1 do
@@ -99,17 +119,17 @@ local function digLayer()
     end
     if w < width then
       if w % 2 == 1 then
-        turtle.turnRight()
+        turnRight()
         if not checkFuel() then return false end
         turtle.dig()
         if not moveForward() then return false end
-        turtle.turnRight()
+        turnRight()
       else
-        turtle.turnLeft()
+        turnLeft()
         if not checkFuel() then return false end
         turtle.dig()
         if not moveForward() then return false end
-        turtle.turnLeft()
+        turnLeft()
       end
     end
   end
