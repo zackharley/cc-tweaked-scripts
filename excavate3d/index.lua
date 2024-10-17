@@ -110,6 +110,11 @@ local function turnLeft()
   end
 end
 
+local function reverseDirection()
+  turnLeft()
+  turnLeft()
+end
+
 local function digLayer()
   for w = 1, width do
     for l = 1, length - 1 do
@@ -143,6 +148,7 @@ local function excavate()
       if not checkFuel() then return end
       turtle.digDown()
       if not moveDown() then return end
+      reverseDirection()       -- Turn around to continue clearing in the same rectangular prism
     end
   end
   -- Return to the original height
