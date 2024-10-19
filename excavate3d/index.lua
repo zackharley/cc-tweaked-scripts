@@ -1,15 +1,16 @@
 local tArgs = { ... }
 
-local function getDimensions()
-  if #tArgs == 3 then
+local function getDimensionsAndMode()
+  if #tArgs == 4 then
     local length = tonumber(tArgs[1])
     local width = tonumber(tArgs[2])
     local depth = tonumber(tArgs[3])
-    if length and width and depth and length > 0 and width > 0 and depth > 0 then
-      return length, width, depth
+    local mode = tArgs[4]:lower()
+    if length and width and depth and length > 0 and width > 0 and depth > 0 and (mode == "drop" or mode == "store") then
+      return length, width, depth, mode
     else
-      print("Error: All dimensions must be positive integers.")
-      return nil, nil, nil
+      print("Error: All dimensions must be positive integers, and mode must be 'drop' or 'store'.")
+      return nil, nil, nil, nil
     end
   else
     print("Enter length:")
@@ -18,18 +19,20 @@ local function getDimensions()
     local width = tonumber(read())
     print("Enter depth:")
     local depth = tonumber(read())
-    if length and width and depth and length > 0 and width > 0 and depth > 0 then
-      return length, width, depth
+    print("Enter mode ('drop' or 'store'):")
+    local mode = read():lower()
+    if length and width and depth and length > 0 and width > 0 and depth > 0 and (mode == "drop" or mode == "store") then
+      return length, width, depth, mode
     else
-      print("Error: All dimensions must be positive integers.")
-      return nil, nil, nil
+      print("Error: All dimensions must be positive integers, and mode must be 'drop' or 'store'.")
+      return nil, nil, nil, nil
     end
   end
 end
 
-local length, width, depth = getDimensions()
+local length, width, depth, mode = getDimensionsAndMode()
 
-if not length or not width or not depth then
+if not length or not width or not depth or not mode then
   return
 end
 
@@ -115,11 +118,55 @@ local function reverseDirection()
   turnLeft()
 end
 
+local function handleFullInventory()
+  if mode == "drop" then
+    for slot = 1, 16 do
+      if turtle.getItemCount(slot) > 0 then
+        turtle.select(slot)
+        turtle.drop()
+      end
+    end
+  elseif mode == "store" then
+    -- Move to the starting position to store items
+    reverseDirection()
+    for i = 1, currentX do
+      turtle.back()
+    end
+    for i = 1, currentZ do
+      turnLeft()
+      turtle.forward()
+      turnRight()
+    end
+    -- Drop items in the chest behind the starting position
+    turtle.turnRight()
+    for slot = 1, 16 do
+      if turtle.getItemCount(slot) > 0 then
+        turtle.select(slot)
+        turtle.drop()
+      end
+    end
+    turtle.turnLeft()
+    -- Return to the previous position
+    for i = 1, currentZ do
+      turnLeft()
+      turtle.back()
+      turnRight()
+    end
+    for i = 1, currentX do
+      turtle.forward()
+    end
+    reverseDirection()
+  end
+end
+
 local function digLayer()
   for w = 1, width do
     for l = 1, length - 1 do
       if not checkFuel() then return false end
       turtle.dig()
+      if turtle.getItemCount(16) > 0 then
+        handleFullInventory()
+      end
       if not moveForward() then return false end
     end
     if w < width then
@@ -127,12 +174,18 @@ local function digLayer()
         turnRight()
         if not checkFuel() then return false end
         turtle.dig()
+        if turtle.getItemCount(16) > 0 then
+          handleFullInventory()
+        end
         if not moveForward() then return false end
         turnRight()
       else
         turnLeft()
         if not checkFuel() then return false end
         turtle.dig()
+        if turtle.getItemCount(16) > 0 then
+          handleFullInventory()
+        end
         if not moveForward() then return false end
         turnLeft()
       end
@@ -147,8 +200,11 @@ local function excavate()
     if d < depth then
       if not checkFuel() then return end
       turtle.digDown()
+      if turtle.getItemCount(16) > 0 then
+        handleFullInventory()
+      end
       if not moveDown() then return end
-      reverseDirection()       -- Turn around to continue clearing in the same rectangular prism
+      reverseDirection() -- Turn around to continue clearing in the same rectangular prism
     end
   end
   -- Return to the original height
